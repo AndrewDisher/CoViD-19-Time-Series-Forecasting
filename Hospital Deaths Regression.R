@@ -4,7 +4,7 @@
 # Thesis on Covid-19 in Massachusetts
 #
 # TASK: Time series analysis of Massachusetts data; build time series models with Mass. CoViD-19 dashboard data 
-# to forecast the number of new deaths we expect to see in the future. 
+# to forecast the number of new deaths we expect to see in the future due to the virus. 
 #
 
 # Packages
