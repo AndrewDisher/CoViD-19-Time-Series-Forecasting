@@ -1,7 +1,7 @@
 #
 # Andrew Disher
 # Bridgewater State University
-# Thesis on Covid-19 in New England
+# Thesis on Covid-19 in Massachusetts
 #
 # TASK: Time series analysis of Massachusetts data; build an ARIMAX model to forecast deaths
 #       with prevalence.
