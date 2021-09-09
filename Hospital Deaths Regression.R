@@ -4,8 +4,8 @@
 # Thesis on Covid-19 in Massachusetts
 #
 # TASK: Time series analysis of Massachusetts CoViD-19 data
-#       (1) Test different time series models that forecast the number of new deaths we expect to see 
-#           in the state of Massachusetts. 
+#       (1) Test different time series models (univariate and multivariate modeling approaches will be considered) 
+#           that forecast the number of new deaths we expect to see in the state of Massachusetts. 
 #       (2) Determine which performs best in terms of forecasting accuracy, using a variety of out-of-sample
 #           forecast error measures. 
 # 
