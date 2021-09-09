@@ -11,6 +11,7 @@
 # 
 # NOTE: Throughout this file, there will be a number of NOTES discussing important information about 
 #       the results of previous lines of code and which direction the subsequent code will then take. 
+#       It is VERY IMPORTANT to read each of these notes for full understanding of the code. 
 #       There will also be a number of plots constructed after the creation of each model that test
 #       model assumptions, validating (or not) the model's appropriateness for the data. 
 #
