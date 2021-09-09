@@ -3,30 +3,43 @@
 # Bridgewater State University
 # Thesis on Covid-19 in Massachusetts
 #
-# TASK: Time series analysis of Massachusetts data; build time series models with Mass. CoViD-19 dashboard data 
-# to forecast the number of new deaths we expect to see in the future due to the virus. 
+# TASK: Time series analysis of Massachusetts CoViD-19 data
+#       (1) Test different time series models that forecast the number of new deaths we expect to see 
+#           in the state of Massachusetts. 
+#       (2) Determine which performs best in terms of forecasting accuracy, using a variety of out-of-sample
+#           forecast error measures. 
+# 
+# NOTE: Throughout this file, there will be a number of NOTES discussing important information about 
+#       the results of previous lines of code and which direction the subsequent code will then take. 
+#       There will also be a number of plots constructed after the creation of each model that test
+#       model assumptions, validating (or not) the model's appropriateness for the data. 
+#
+#
+#
+# ***Any questions about the code, graphs, or the results???***
+#     email me at adisher219@gmail.com
+# 
 #
 
 # Packages
-library(readxl)
-library(ggplot2)
-library(zoo) # Rollmean and rollsum functions
+library(readxl) # Provides function to read Excel files as data input
+library(ggplot2) # All purpose, high quality graphing library
+library(zoo) # Rollmean and rollsum functions (used for creating an Estimated Active Cases column)
 library(car) # boxCox function to assess heteroschedasticity
 library(forecast) # Time series functionality
 library(tseries) # Stationarity hypothesis tests
 library(lmtest) # Test model coefficients for significance
-library(scales)
-library(TSA)
-library(nortest)
-library(Metrics)
-library(dplyr)
+library(scales) # Adds features that make graphing in ggplot2 easier and produce higher quality graphs
+library(TSA) # Provides convenient features for working with time series data 
+library(nortest) # Used for different hypothesis tests that may be used for models' assumptions
+library(Metrics) # Provides functions to calculate forecast error measures after a model has been trained
+library(dplyr) # Good library for manipulating data
 
 
 # Import relevant data sets
 Cases_by_Test_Date <- read_excel("BSU Stuff/Undergraduate Thesis/Data/COVID19/Massachusetts-dashboard_12-06-2020/Updated Data for ARIMAX/CasesByDate (Test Date).xlsx")
 Deaths_by_Date <- read_excel("BSU Stuff/Undergraduate Thesis/Data/COVID19/Massachusetts-dashboard_12-06-2020/Updated Data for ARIMAX/DateofDeath.xlsx")
 Hospitalizations_by_Date <- read_excel("BSU Stuff/Undergraduate Thesis/Data/COVID19/Massachusetts-dashboard_12-06-2020/Updated Data for ARIMAX/Hospitalization from Hospitals.xlsx")
-Vaccines_by_Date <- read.csv("~/BSU Stuff/Undergraduate Thesis/Data/COVID19/Massachusetts-dashboard_12-06-2020/Updated Data for ARIMAX/Vaccinations/us-daily-covid-vaccine-doses-administered.csv")
 
 # Convert tables to data frames
 Cases_by_Test_Date <- as.data.frame(Cases_by_Test_Date)
@@ -81,18 +94,6 @@ colnames(Deaths_by_Date) <- c('Date', 'Confirmed_Deaths', 'Total_Conf_Deaths')
 # Convert to type date
 Hospitalizations_by_Date$Date <- as.character(Hospitalizations_by_Date$Date)
 Hospitalizations_by_Date$Date <- as.Date(Hospitalizations_by_Date$Date, format = "%Y-%m-%d")
-
-
-### Vaccines Data Changes ###
-Vaccines_by_Date <- subset(Vaccines_by_Date, Entity == 'Massachusetts')
-Vaccines_by_Date <- Vaccines_by_Date[, -c(1, 2)]
-
-# Convert data column to type Date
-Vaccines_by_Date$Day <- as.character(Vaccines_by_Date$Day)
-Vaccines_by_Date$Day <- as.Date(Vaccines_by_Date$Day, format = '%Y-%m-%d')
-
-# Rename columns
-colnames(Vaccines_by_Date) <- c("Date", "New_Vaccinations")
 
 
 
@@ -154,7 +155,7 @@ colnames(Training_Data)[c(3, 4)] <- c('Confirmed_Deaths', 'Patients')
 )
 
 
-# Scatterplot Matrix
+# Scatter plot Matrix
 pairs(~ Confirmed_Deaths + Estimated_Active_Cases + Patients, data = Training_Data)
 
 # Correlation Matrix
@@ -199,6 +200,41 @@ cor(Training_Data[, c(2:4)])
   + theme_bw()
   + labs(caption = c('Data sourced from *MA CoViD-19 Dashboard'))
 )
+
+
+
+
+# NOTE: After examining the scatter plot between estimated active cases and the number of new 
+#       deaths due to CoViD-19, we see that the data follows two distinct but completely different 
+#       trends. This is also the case between estimated active cases and the number of CoViD-19 patients.
+#       This can be due to a multitude of reasons, such as under reporting of cases earlier in the 
+#       pandemic, and as a result two different peaks appear in the time series data and the scatterplots
+#       involving estimated active cases suggest inconsistent linear patterns. 
+#
+#       Therefore, we would like to label estimated active cases as an inconsistent predictor variable, 
+#       and choose not to include it in the time series model that will end up forecasting the number
+#       of new deaths in Massachusetts. Thus, we will turn our focus to the variables for new deaths 
+#       and currently hospitalized patients only. 
+#
+#
+# NOTE 2: (IMPORTANT!!!) The goal of the remainder of the code in this file is to fit three different 
+#         tiem series models: 
+#         (1) A regression model with ARIMA errors (see Rob J. Hyndman's work on the topic in his book
+#             "Forecasting: Principles and Practice") using the past values of the deaths time series, 
+#             as well as the past values of the patients hospitalized time series, to forecast future 
+#             values of new deaths in MA.
+#         (2) A simpler univariate ARIMA model, using nothing more than the past values of the deaths 
+#             time series to predict its future values. 
+#         (3) A more complex version of the univariate ARIMA model that includes an overly large number
+#             of terms to illustrate that increased complexity of the ARIMA model does not lead to 
+#             better performance and actually hinders it. 
+#
+#         Ultimately, the Regression Model with ARIMA Errors will be seen to perform better than the 
+#         two simpler univariate ARIMA time series models, showing that it is worthwhile to include
+#         additional predictor time series variables, such as the number of people currently hospitalized
+#         due to CoVID-19. 
+
+
 
 
 # Create a Linear Regression ----------------------------------------------
@@ -279,7 +315,7 @@ acf(regMod2_residuals, lag.max = 50, type = "correlation", main = expression('Au
 acf(regMod2_residuals, lag.max = 50, type = "partial", main = expression('Partial Autocorrelation Function'),
     ylab = expression('PACF'), xlab = expression('Lag, k'))
 
-# NOTE: The residuals seem to be dependent upon time. We must use arima errors model
+# NOTE: The residuals seem to be dependent upon time. We must use regression with ARIMA errors model.
 
 
 # Diagnostic Tests --------------------------------------------------------
@@ -789,7 +825,7 @@ for (row in 1:346) {
  + ggtitle("New Confirmed Deaths in Massachusetts")
  + scale_color_manual("", breaks = c("Actual Data", "Regression with ARIMA(0,1,1) Errors", 
                                      "ARIMA(0,1,1)", "ARIMA(5,1,1)"), 
-                      values = c("#006B3C", "Blue", "Orange", "Red"))
+                      values = c("#006B3C", "Blue", "Red", "Orange"))
  + theme(legend.position = "bottom")
  + labs(caption = c('Data sourced from *MA CoViD-19 Dashboard'))
 )
@@ -818,7 +854,7 @@ for (row in 1:346) {
   + geom_vline(xintercept = as.Date("2021-03-17"), linetype = "dashed")
   + scale_color_manual("", breaks = c("Actual Data", "Regression with ARIMA(0,1,1) Errors", 
                                       "ARIMA(0,1,1)", "ARIMA(5,1,1)"), 
-                       values = c("#006B3C", "Blue", "Orange", "Red"))
+                       values = c("#006B3C", "Blue", "Red", "Orange"))
   + theme(legend.position = "bottom")
   + labs(caption = c('Data sourced from *MA CoViD-19 Dashboard'))
 )
@@ -853,7 +889,7 @@ for (row in 1:346) {
 
 
 
- # Out of Sample Forecast error measures
+# Create a data frame for the Out of Sample Forecast error measures.
 ROWS_OOS <- (nrow(regModARIMA_Graphing)-6):nrow(regModARIMA_Graphing)
 ROWS_IS <- 1:nrow((regModARIMA_Graphing)-7)
 
@@ -895,6 +931,4 @@ Forecast_Error_Measures <- data.frame(Model_1_OOS = Model_1_EM_OOS,
                                       Model_3_IS = Model_3_EM_IS)
 
 rownames(Forecast_Error_Measures) <- c("RMSE", "MAE", "MAPE", "MASE")
-
-
 
