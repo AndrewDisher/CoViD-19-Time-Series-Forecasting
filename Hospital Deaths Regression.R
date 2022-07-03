@@ -219,7 +219,7 @@ cor(Training_Data[, c(2:4)])
 #
 #
 # NOTE 2: (IMPORTANT!!!) The goal of the remainder of the code in this file is to fit three different 
-#         tiem series models: 
+#         time series models: 
 #         (1) A regression model with ARIMA errors (see Rob J. Hyndman's work on the topic in his book
 #             "Forecasting: Principles and Practice") using the past values of the deaths time series, 
 #             as well as the past values of the patients hospitalized time series, to forecast future 
